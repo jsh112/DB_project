@@ -2,6 +2,7 @@ import pandas as pd
 import sqlite3
 import re
 
+
 class LibraryDatabase:
     def __init__(self, db_name="library.db", csv_file="library.csv"):
         '''
@@ -14,21 +15,59 @@ class LibraryDatabase:
         self.conn = sqlite3.connect(self.db_name)
         self.cursor = self.conn.cursor()
 
-        # Create Book table
         with self.conn:
+            # Book Table
             self.cursor.execute('''
                 CREATE TABLE IF NOT EXISTS Book (
-                    author TEXT,
+                    author TEXT NOT NULL,
                     keyword TEXT,
                     title TEXT NOT NULL,
-                    published_year INTEGER,
-                    ISBN INTEGER PRIMARY KEY
-                )
+                    published_year INTEGER NOT NULL,
+                    ISBN TEXT PRIMARY KEY,
+                    Available_rent INT DEFAULT 1
+                );
+            ''')
+
+            # User Table
+            self.cursor.execute('''
+                CREATE TABLE IF NOT EXISTS User(
+                    id TEXT NOT NULL PRIMARY KEY,
+                    password TEXT,
+                    email TEXT,
+                    available INTEGER DEFAULT 1,
+                    overdue_count INTEGER DEFAULT 0
+                );
+            ''')
+
+            # Rental Table
+            self.cursor.execute('''
+                CREATE TABLE IF NOT EXISTS Rental(
+                    RentalID INTEGER PRIMARY KEY AUTOINCREMENT,
+                    RentalDate TEXT,
+                    Status TEXT,
+                    Rent_ISBN TEXT NOT NULL,
+                    User_ID TEXT NOT NULL,
+                    DueDate TEXT NOT NULL,
+                    FOREIGN KEY (Rent_ISBN) REFERENCES Book(ISBN),
+                    FOREIGN KEY (User_ID) REFERENCES User(id)
+                );
+            ''')
+
+            # Reserve Table
+            self.cursor.execute('''
+                CREATE TABLE IF NOT EXISTS Reserve(
+                    ISBN TEXT NOT NULL,
+                    User_id TEXT NOT NULL,
+                    Reserved_date TEXT,
+                    PRIMARY KEY(ISBN, User_id),
+                    FOREIGN KEY (ISBN) REFERENCES Book(ISBN),
+                    FOREIGN KEY (User_id) REFERENCES User(id)
+                );
             ''')
 
         # Check if the Book table is populated
         if not self.is_table_populated():
-            self.load_data_with_pandas()
+            self.load_data()
         else:
             print("Data already exists in the Book table. Skipping CSV load.")
 
@@ -41,7 +80,7 @@ class LibraryDatabase:
         count = self.cursor.fetchone()[0]
         return count > 0
 
-    def load_data_with_pandas(self):
+    def load_data(self):
         '''
         Load data from the CSV file and insert it into the Book table.
         Preprocesses data by removing non-numeric characters from numeric fields.
@@ -54,14 +93,14 @@ class LibraryDatabase:
             df['published_year'] = df['published_year'].apply(
                 lambda x: int(re.sub(r'\D', '', str(x))) if pd.notnull(x) and re.sub(r'\D', '', str(x)) != '' else None)
             df['ISBN'] = df['ISBN'].apply(
-                lambda x: int(re.sub(r'\D', '', str(x))) if pd.notnull(x) and re.sub(r'\D', '', str(x)) != '' else None)
+                lambda x: re.sub(r'\D', '', str(x)) if pd.notnull(x) else None)
 
             # Insert data into the Book table
             for _, row in df.iterrows():
                 self.cursor.execute('''
-                    INSERT OR IGNORE INTO Book (author, keyword, title, published_year, ISBN)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (row['Authors'], row['Keyword'], row['Title'], row['published_year'], row['ISBN']))
+                    INSERT OR IGNORE INTO Book (author, keyword, title, published_year, ISBN, Available_rent)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (row['Authors'], row['Keyword'], row['Title'], row['published_year'], row['ISBN'], 1))
 
             self.conn.commit()
             print(f"Data loaded successfully from {self.csv_file}")
@@ -70,6 +109,14 @@ class LibraryDatabase:
             print(f"Error: The file '{self.csv_file}' was not found.")
         except sqlite3.IntegrityError as e:
             print(f"Error inserting data: {e}")
-        finally:
-            # Close the database connection
-            self.conn.close()
+
+    def close(self):
+        '''Close the database connection.'''
+        self.conn.close()
+        print("Database connection closed.")
+        
+    
+    '''
+    def showBooks(self, ...):
+        
+    '''
