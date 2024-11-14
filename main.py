@@ -17,10 +17,10 @@ def search():
 @app.route('/login')
 def log_in():
     return render_template('login.html')
-
+  
 if __name__ == "__main__":
     # First, create tables and load data from the CSV file
     
     LibraryDatabase(db_name="library.db", csv_file="library.csv")
     
-    app.run(host='127.0.0.1', port=5000, debug=True)
+    app.run(debug=True)
