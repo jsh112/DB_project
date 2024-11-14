@@ -10,6 +10,14 @@ app = Flask(__name__)
 def home():
     return render_template('home.html')
 
+@app.route('/search')
+def search():
+    return render_template('search.html')
+
+@app.route('/login')
+def log_in():
+    return render_template('login.html')
+  
 if __name__ == "__main__":
     # First, create tables and load data from the CSV file
     
