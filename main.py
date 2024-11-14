@@ -17,7 +17,7 @@ def search():
 @app.route('/login')
 def log_in():
     return render_template('login.html')
-
+  
 if __name__ == "__main__":
     # First, create tables and load data from the CSV file
     
