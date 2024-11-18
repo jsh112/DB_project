@@ -2,7 +2,7 @@ import pandas as pd
 import sqlite3
 import re
 
-# test
+
 class LibraryDatabase:
     def __init__(self, db_name="library.db", csv_file="library.csv"):
         '''
@@ -109,13 +109,15 @@ class LibraryDatabase:
             print(f"Error: The file '{self.csv_file}' was not found.")
         except sqlite3.IntegrityError as e:
             print(f"Error inserting data: {e}")
+        finally:
+            # Close the database connection
+            self.conn.close()
 
     def close(self):
         '''Close the database connection.'''
         self.conn.close()
         print("Database connection closed.")
-        
-    
+
     '''
     def showBooks(self, ...):
         

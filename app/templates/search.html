@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}책 검색 - Library{% endblock %}
+
+{% block content %}
+    <h2>책 검색</h2>
+    <form action="{{ url_for('search') }}" method="POST" class="search-form">
+        <input type="text" name="query" placeholder="책 제목을 입력하세요" value="{{ query }}" required>
+    </form>
+
+    <!-- Error Message Display -->
+    {% if error %}
+        <div class="error-message">
+            <p>{{ error }}</p>
+        </div>
+    {% endif %}
+
+    <!-- 검색 결과 표시 -->
+    {% if books %}
+        <h3>검색 결과 ({{ books|length }}개): "{{ query }}"</h3>
+        <ul>
+            {% for book in books %}
+                <li>
+                    <!-- book_detail 링크 제거 -->
+                    <strong>{{ book['title'] }}</strong> by {{ book['author'] }} ({{ book['published_year'] }}) - ISBN: {{ book['ISBN'] }}
+                </li>
+            {% endfor %}
+        </ul>
+
+        <!-- 페이징 네비게이션 -->
+        <div class="pagination">
+            {% if page > 1 %}
+                <a href="{{ url_for('search', query=query, page=page-1) }}">이전</a>
+            {% endif %}
+
+            <span>페이지 {{ page }}{% if total_pages > 0 %} / {{ total_pages }}{% endif %}</span>
+
+            {% if total_pages > page %}
+                <a href="{{ url_for('search', query=query, page=page+1) }}">다음</a>
+            {% endif %}
+        </div>
+    {% elif query %}
+        <p>검색 결과가 없습니다.</p>
+    {% endif %}
+
+    <!-- 홈으로 돌아가기 링크 -->
+    <a href="{{ url_for('home') }}">홈으로 돌아가기</a>
+{% endblock %}
