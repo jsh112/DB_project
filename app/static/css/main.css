@@ -1,0 +1,88 @@
+/* app/static/css/main.css */
+
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background-color: #f8f9fa;
+}
+
+h1, h2 {
+    text-align: center;
+}
+
+.search-form {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.search-form input[type="text"] {
+    padding: 8px;
+    width: 300px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.search-form input[type="submit"] {
+    padding: 8px 16px;
+    border: none;
+    background-color: #1111dd;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.search-form input[type="submit"]:hover {
+    background-color: #8b8aaf;
+}
+
+.error-message {
+    color: red;
+    text-align: center;
+    margin-top: 20px;
+}
+
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    background-color: #ffffff;
+    padding: 10px;
+    margin: 10px auto;
+    border-radius: 4px;
+    max-width: 600px;
+}
+
+.book-detail {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.book-detail h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.book-detail p {
+    font-size: 1.1em;
+    margin: 10px 0;
+}
+
+.book-detail a {
+    display: inline-block;
+    margin: 10px 5px 0 0;
+    padding: 8px 16px;
+    text-decoration: none;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+}
+
+.book-detail a:hover {
+    background-color: #0056b3;
+}
