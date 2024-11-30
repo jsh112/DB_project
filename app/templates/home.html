@@ -14,4 +14,17 @@
             <p>{{ error }}</p>
         </div>
     {% endif %}
+
+    <!-- 추천 도서 리스트 -->
+    <div class="recommended-books">
+        <h3>추천 도서</h3>
+        <ul>
+            {% for book in recommended_books %}
+                <li><strong>{{ book['title'] }}</strong><br> {{ book['author'] }}<br> ({{ book['published_year'] }})</li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    
+
 {% endblock %}
