@@ -11,7 +11,7 @@ def init_routes(app):
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
             
-            cursor.execute("SELECT author, title, published_year, ISBN FROM Book LIMIT 10")
+            cursor.execute("SELECT author, title, ISBN, available_rent FROM Book LIMIT 10")
             recommended_books = cursor.fetchall()
 
         except sqlite3.Error as e:
