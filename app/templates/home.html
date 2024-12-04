@@ -1,19 +1,39 @@
 <!-- app/templates/home.html -->
 {% extends "base.html" %}
-
 {% block title %}Home - Library{% endblock %}
-
 {% block content %}
-    <h2>책 검색</h2>
-    <form action="{{ url_for('search') }}" method="POST" class="search-form">
-        <input type="text" name="query" placeholder="책 제목을 입력하세요" required>
-        <input type="submit" value="검색">
-    </form>
-    
-    <!-- Error Message Display -->
-    {% if error %}
-        <div class="error-message">
-            <p>{{ error }}</p>
-        </div>
-    {% endif %}
+<h2>책 검색</h2>
+<form action="{{ url_for('search') }}" method="POST" class="search-form">
+    <input type="text" name="query" placeholder="책 제목을 입력하세요" required>
+    <input type="submit" value="검색">
+</form>
+
+<!-- Error Message Display -->
+{% if error %}
+<div class="error-message">
+    <p>{{ error }}</p>
+</div>
+{% endif %}
+
+<!-- 추천 도서 리스트 -->
+<div class="recommended-books">
+    <h3>추천 도서</h3>
+    <ul>
+        {% for book in recommended_books %}
+        <li>
+            <strong>{{ book['title'] }}</strong><br>
+            {{ book['author'] }}<br>
+            {% if book['available_rent'] | int == 1 %}
+            <span style="color: rgb(37, 6, 243);">대출 가능</span>
+            {% else %}
+                <span style="color: red;">대출 불가능</span>
+            {% endif %}
+
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+
+
 {% endblock %}
