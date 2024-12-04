@@ -11,10 +11,70 @@
 </head>
 
 <body>
-    <h1>도서관</h1>
-    <nav>
-        <a href="{{ url_for('home') }}">홈</a> | <a href="{{ url_for('login') }}">로그인</a>
-    </nav>
+    <!--도서관 버튼을 누르면 홈으로 감-->
+    <h1>
+        <a href="{{ url_for('home') }}" style="text-decoration: none; color: inherit;">
+            도서관
+        </a>
+    </h1>
+
+    <!--사용자 정보-->
+    <div class="header" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px;">
+        <!--로그인이 된 상태-->
+        {% if session.get('user_id') %}
+        <div class="user-info" style="display: flex; align-items: center; gap: 15px;">
+            <!--내 정보를 볼 수 있는 칸, 대출기능과 함께 만들자-->
+
+            <!--로그아웃을 하는 버튼-->
+            <a href="javascript:void(0);" 
+            onclick="confirmLogout()" 
+            style="text-decoration: none; color: blue; border: 1px solid blue; padding: 5px 10px; border-radius: 5px; text-align: center;">
+                로그아웃
+            </a>
+        </div>
+        <!--로그아웃 시에 js 사용-->
+        <script>
+            // 위에서 정의한 confirmLogout 함수가 버튼이 눌리면 실행
+            function confirmLogout(){
+                if (confirm("정말로 로그아웃 하시겠습니까?")) {
+                    // 서버로 로그아웃 요청 보내기
+                    fetch("{{ url_for('logout') }}", {
+                        method : "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    })
+                    .then(response => {
+                        if(response.ok){
+                            // 로그아웃 성공 시 홈페이지로 이동
+                            window.location.href = "{{ url_for('home') }}";
+                        }
+                        else{
+                            alert("로그아웃에 실패했습니다. 다시 시도해주세요.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error : ", error);
+                        alert("네트워크 오류가 발생했습니다. 다시 시도해주세요.")
+                    })
+                }
+            }
+        </script>
+        {% else %}
+        <div class="user-login" style="display: flex; align-items: center; gap: 15px;">
+            <!-- 로그인, 로그아웃 -->
+            <a href="{{ url_for('login') }}" 
+            style="text-decoration: none; color: blue; border: 1px solid blue; padding: 5px 10px; border-radius: 5px; text-align: center;">
+                로그인
+            </a>
+            
+            <!--회원가입-->
+            <a href="{{ url_for('signup') }}" 
+            style="text-decoration: none; color: blue; border: 1px solid blue; padding: 5px 10px; border-radius: 5px; text-align: center;">
+                회원가입
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
     <hr>
 
     {% block content %}{% endblock %}
