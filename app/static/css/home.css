@@ -19,3 +19,30 @@
 .search-form input[type="submit"]:hover {
     background-color: #218838;
 }
+
+.recommended-books {
+    margin-top: 40px;
+    text-align: center;
+    background-color: #ffffff;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    display: inline-block;
+}
+
+.recommended-books h3 {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.recommended-books ul {
+    list-style-type: none;
+    padding: 0;
+    text-align: center;
+}
+
+.recommended-books li {
+    margin-bottom: 8px;
+    font-size: 0.9em;
+    text-align: center;
+}
