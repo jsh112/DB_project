@@ -33,6 +33,7 @@ class LibraryDatabase:
                 CREATE TABLE IF NOT EXISTS User(
                     id TEXT NOT NULL PRIMARY KEY,
                     password TEXT,
+                    name TEXT,
                     email TEXT,
                     available INTEGER DEFAULT 1,
                     overdue_count INTEGER DEFAULT 0
@@ -44,7 +45,6 @@ class LibraryDatabase:
                 CREATE TABLE IF NOT EXISTS Rental(
                     RentalID INTEGER PRIMARY KEY AUTOINCREMENT,
                     RentalDate TEXT,
-                    Status TEXT,
                     Rent_ISBN TEXT NOT NULL,
                     User_ID TEXT NOT NULL,
                     DueDate TEXT NOT NULL,
