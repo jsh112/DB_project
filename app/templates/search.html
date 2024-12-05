@@ -5,7 +5,8 @@
 {% block content %}
     <h2>책 검색</h2>
     <form action="{{ url_for('search') }}" method="POST" class="search-form">
-        <input type="text" name="query" placeholder="책 제목을 입력하세요" value="{{ query }}" required>
+        <input type="text" name="query" placeholder="검색할 책 제목을 입력하세요" value="{{ query }}" required>
+        <button type="submit">검색</button>
     </form>
 
     <!-- Error Message Display -->
@@ -20,12 +21,29 @@
         <h3>검색 결과 ({{ books|length }}개): "{{ query }}"</h3>
         <ul>
             {% for book in books %}
-                <li>
-                    <!-- book_detail 링크 제거 -->
-                    <strong>{{ book['title'] }}</strong> by {{ book['author'] }} ({{ book['published_year'] }}) - ISBN: {{ book['ISBN'] }}
+                <li style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <!-- 책 정보 -->
+                    <div style="flex: 1;">
+                        <strong>{{ book['title'] }}</strong> by {{ book['author'] }} ({{ book['published_year'] }})
+                        {% if book['available_rent'] | int == 1 %}
+                            <br><span style="color: rgb(37, 6, 243);">대출 가능</span>
+                        {% else %}
+                            <br><span style="color: red;">대출 불가능</span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- 버튼 -->
+                    <div style="margin-left: auto;">
+                        {% if book['available_rent'] | int == 1 %}
+                            <!-- 대출 가능 -->
+                        {% else %}
+                            <!-- 대출 불가능 -->
+                        {% endif %}
+                    </div>
                 </li>
             {% endfor %}
         </ul>
+        
 
         <!-- 페이징 네비게이션 -->
         <div class="pagination">

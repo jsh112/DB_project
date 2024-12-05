@@ -1,26 +1,32 @@
-from flask import render_template, request, redirect, url_for, abort, session
+from flask import render_template, request, redirect, url_for, session
 import sqlite3
+import glob
+from datetime import datetime, timedelta
 
-
+db = 'library.db'
 
 def init_routes(app):
     @app.route('/')
     def home():
+        user_id = session.get('user_id')
+        
         try:
-            conn = sqlite3.connect('library.db')
-            conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            
-            cursor.execute("SELECT author, title, ISBN, available_rent FROM Book LIMIT 10")
-            recommended_books = cursor.fetchall()
-
+            with sqlite3.connect(db) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+                
+                # 랜덤으로 도서 추천
+                cursor.execute(
+                    'SELECT author, title, available_rent FROM Book  \
+                    ORDER BY RANDOM() LIMIT 10'
+                )
+                recommended_books = cursor.fetchall()
+                
+            # 로그인 상태와 렌더링 하자.
+            return render_template('home.html', recommended_books=recommended_books, user_id=user_id)
+                
         except sqlite3.Error as e:
-            recommended_books = []
-            print(f"Database error: {e}")
-        finally:
-            conn.close()
-
-        return render_template('home.html', recommended_books=recommended_books)
+            print(f'DataBase error : {e}')        
 
     @app.route('/search/', methods=['GET', 'POST'])
     def search():
@@ -43,7 +49,7 @@ def init_routes(app):
 
             try:
 
-                conn = sqlite3.connect('library.db')
+                conn = sqlite3.connect(db)
                 conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
 
@@ -53,7 +59,7 @@ def init_routes(app):
                 total_pages = total_results // per_page
 
                 offset = (page - 1) * per_page
-                sql_query = "SELECT author, keyword, title, published_year, ISBN FROM Book WHERE title LIKE ? LIMIT ? OFFSET ?"
+                sql_query = "SELECT author, keyword, title, published_year, ISBN, Available_rent FROM Book WHERE title LIKE ? LIMIT ? OFFSET ?"
                 cursor.execute(
                     sql_query, ('%' + query + '%', per_page, offset))
                 books = cursor.fetchall()
@@ -67,49 +73,73 @@ def init_routes(app):
 
             return render_template('search.html', books=books, query=query, error=error, page=page, per_page=per_page, total_pages=total_pages)
         
-    @app.route('/login/')
+    # 로그인
+    @app.route('/login/', methods=['GET', 'POST'])
     def login():
+        # POST -> 서버의 리소스를 업데이트하는 경우
+        if request.method == 'POST':
+            _id = request.form.get('ID')
+            password = request.form.get('password')
+            
+            try:
+                with sqlite3.connect(db) as conn:
+                    cursor = conn.cursor()
+                    
+                    # 받아온 ID와 pw가 db에 있는지 확인
+                    cursor.execute('SELECT id, name FROM User WHERE id = ? AND password = ?', (_id, password))
+                    user = cursor.fetchone()
+                    
+                if user:
+                    # 사용자 ID를 session에 저장
+                    session['user_id'] = user[0]
+                    session['name'] = user[1]
+                    # url_for -> 함수 이름을 사용하자.
+                    return redirect(url_for('home'))
+                else:
+                    return render_template('login.html', error="ID와 비밀번호를 다시 입력해 주세요.")
+            except sqlite3.Error as e:
+                print(f'Database error : {e}')
+        return render_template('login.html')
+    
+    # 로그아웃
+    @app.route('/logout/', methods=['POST'])
+    def logout():
+        session.clear()
+        return '', 204
+    
+    # 회원가입 기능
+    @app.route('/signup/', methods=['GET', 'POST'])
+    def signup():
+        # html에 있는 박스칸에 작성한 데이터를 가져옴
+        if request.method == 'POST':
+            _id = request.form['ID']
+            password = request.form['password']
+            name = request.form['name']
+            email = request.form['email']
+            
+            try:
+                conn = sqlite3.connect(db)
+                cursor = conn.conncect
+                
+                # 회원가입 한 정보를 쿼리에 넣어야함
+                cursor.execute(
+                    "INSERT INTO User \
+                    (id, password, name, email, avaiable, overdue_count) \
+                    VALUES (?, ?, ?, ?, ?, ?)", (_id, password, name, email, 1, 0)
+                )
+                
+                conn.commit()
+            except sqlite3.Error as e:
+                print(f'DataBase error : {e}')
+                return e
+
+            finally:
+                conn.close()
+                
+            return redirect(url_for('login'))
+        
+        return render_template('signup.html')
+
+    @app.route('/dashboard/', methods=['GET'])
+    def dashboard():
         pass
-
-    # 대출 라우트
-    @app.route('/rent/<isbn>', methods=['POST'])
-    def rent_book(isbn):
-        # 사용자 로그인 체크
-        user_id = session.get('user_id')  # 세션에서 유저 아이디 가져오기
-        if not user_id:
-            return "User not logged in", 401
-        try:
-            conn = sqlite3.connect('library.db')
-            cursor = conn.cursor()
-
-            # Check if the book is available
-            cursor.execute("SELECT available_rent FROM Book WHERE ISBN = ?", (isbn,))
-            result = cursor.fetchone()
-            if result and result[0] == 0:
-                return "This book is not available for rent.", 400
-
-            # Update Book availability
-            cursor.execute("UPDATE Book SET available_rent = 0 WHERE ISBN = ?", (isbn,))
-
-            # Insert into Rental
-            user_id = session.get('user_id')  # Use session for the logged-in user ID
-            if not user_id:
-                return "User not logged in", 401
-
-            rental_date = "2024-11-30"  # Use datetime.now() for the current date
-            due_date = "2024-12-07"  # Example: 7 days from rental_date
-            cursor.execute('''
-                INSERT INTO Rental (RentalDate, Status, Rent_ISBN, User_ID, DueDate)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (rental_date, "Rented", isbn, user_id, due_date))
-
-            conn.commit()
-            return "Book rented successfully!", 200
-
-        except sqlite3.Error as e:
-            return f"Database error: {e}", 500
-        finally:
-            conn.close()
-
-
-   
