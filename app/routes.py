@@ -140,6 +140,31 @@ def init_routes(app):
         
         return render_template('signup.html')
 
+    # 내 정보 보는 dashboard 기능 생성
     @app.route('/dashboard/', methods=['GET'])
     def dashboard():
-        pass
+        user_id = session.get('user_id')
+        
+        # 로그인하지 않은 경우
+        if not user_id:
+            return render_template(url_for('login'))
+        
+        try:
+            with sqlite3.connect(db) as conn:
+                cursor = conn.cursor()
+                
+                # 대출한 책 정보 가져오기
+                cursor.execute("""
+                    SELECT title, RentalDate, DueDate
+                    FROM Rental
+                    JOIN Book ON Rental.Rent_ISBN = Book.ISBN
+                    WHERE Rental.User_id = ?;
+                """, (user_id,))
+                
+                rentals = cursor.fetchall()
+                
+            return render_template('dashboard.html', rentals=rentals)
+                
+        except sqlite3.Error as e:
+            print(f'Database error : {e}')
+            return e
