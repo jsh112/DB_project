@@ -1,6 +1,5 @@
 from flask import render_template, request, redirect, url_for, session
 import sqlite3
-import glob
 from datetime import datetime, timedelta
 
 db = 'library.db'
@@ -17,7 +16,7 @@ def init_routes(app):
                 
                 # 랜덤으로 도서 추천
                 cursor.execute(
-                    'SELECT author, title, available_rent FROM Book  \
+                    'SELECT author, title, ISBN, available_rent FROM Book  \
                     ORDER BY RANDOM() LIMIT 10'
                 )
                 recommended_books = cursor.fetchall()
@@ -119,7 +118,7 @@ def init_routes(app):
             
             try:
                 conn = sqlite3.connect(db)
-                cursor = conn.conncect
+                cursor = conn.cursor
                 
                 # 회원가입 한 정보를 쿼리에 넣어야함
                 cursor.execute(
@@ -151,20 +150,84 @@ def init_routes(app):
         
         try:
             with sqlite3.connect(db) as conn:
+                conn.row_factory = sqlite3.Row  # 결과를 dict 형태로 반환
                 cursor = conn.cursor()
                 
                 # 대출한 책 정보 가져오기
                 cursor.execute("""
-                    SELECT title, RentalDate, DueDate
-                    FROM Rental
-                    JOIN Book ON Rental.Rent_ISBN = Book.ISBN
-                    WHERE Rental.User_id = ?;
-                """, (user_id,))
-                
+    SELECT Rental.RentalID, Book.title, Rental.RentalDate, Rental.DueDate
+    FROM Rental
+    JOIN Book ON Rental.Rent_ISBN = Book.ISBN
+    WHERE Rental.User_id = ?;
+""", (user_id,))
+
                 rentals = cursor.fetchall()
                 
-            return render_template('dashboard.html', rentals=rentals)
+            return render_template('dashboard.html', rentals=rentals, user_id=user_id)
                 
         except sqlite3.Error as e:
             print(f'Database error : {e}')
             return e
+        
+    # 책 대출 기능
+    @app.route('/borrow/<isbn>', methods=['POST'])
+    def borrow(isbn):
+        user_id = session.get('user_id')
+        
+        if not user_id:
+            return redirect(url_for('login'))
+
+        # 대출 날짜와 기한 계산
+        rentdate = datetime.now()
+        duedate = (rentdate + timedelta(days=1)).strftime('%Y-%m-%d')
+        rentdate = rentdate.strftime('%Y-%m-%d')
+
+        
+        try:
+            # 1단계 : 책의 대출 가능 상태를 업데이트
+            with sqlite3.connect(db) as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE Book SET available_rent = 0
+                    WHERE ISBN = ?
+                """, (isbn,))
+                conn.commit() # 첫번째 단계 종료,
+                
+            # 2단계: 대출 정보를 기록
+            with sqlite3.connect(db) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT MAX(RentalID) FROM Rental")
+                max_rental_id = cursor.fetchone()[0]
+                rent_idx = max_rental_id + 1 if max_rental_id else 1
+
+                cursor.execute("""
+                    INSERT INTO Rental (RentalID, RentalDate, Rent_ISBN, User_ID, DueDate) 
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (rent_idx, rentdate, isbn, user_id, duedate)
+                    )
+                conn.commit()  # 두 번째 트랜잭션 종료
+            
+            return redirect(url_for('home'))
+            
+        except sqlite3.Error as e:
+            print(f'Database error : {e}')
+            return e
+    
+    # 책 반납 기능
+    @app.route('/return/<rent_id>', methods=['POST'])
+    def return_book(rent_id):
+        try:
+            with sqlite3.connect(db) as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    DELETE FROM Rental WHERE Rental.RentalID = ?
+                """, (rent_id,))
+                
+                conn.commit()
+                
+            return redirect(url_for('dashboard'))
+    
+        except sqlite3.Error as e:
+            print(f'Database error : {e}')
+            return str(e), 500
