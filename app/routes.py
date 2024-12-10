@@ -155,15 +155,49 @@ def init_routes(app):
                 
                 # 대출한 책 정보 가져오기
                 cursor.execute("""
-    SELECT Rental.RentalID, Book.title, Rental.RentalDate, Rental.DueDate
-    FROM Rental
-    JOIN Book ON Rental.Rent_ISBN = Book.ISBN
-    WHERE Rental.User_id = ?;
-""", (user_id,))
+                    SELECT Rental.RentalID, Book.title, Rental.RentalDate, Rental.DueDate
+                    FROM Rental
+                    JOIN Book ON Rental.Rent_ISBN = Book.ISBN
+                    WHERE Rental.User_id = ?;
+                """, (user_id,))
 
                 rentals = cursor.fetchall()
                 
-            return render_template('dashboard.html', rentals=rentals, user_id=user_id)
+                # 연체일 계산
+                rental_data = []
+                for rental in rentals:
+                    due_date = rental['DueDate']
+                    due_date = datetime.strptime(due_date, '%Y-%m-%d')
+                    
+                    rent_date = rental['RentalDate']
+                    rent_date = datetime.strptime(rent_date, '%Y-%m-%d')
+                    overdue_days = (datetime.now() - due_date).days if datetime.now() > due_date else 0
+                    rental_data.append({
+                        'RentalID' : rental['RentalID'],
+                        'title' : rental['title'],
+                        'RentalDate' : rent_date.strftime('%Y-%m-%d'),
+                        'DueDate' : due_date.strftime('%Y-%m-%d'),
+                        'overdue_days' : overdue_days
+                    })
+                
+                # 대출한 책 개수 확인
+                cursor.execute("""
+                    SELECT COUNT(*) FROM Rental WHERE User_ID = ?;
+                """, (user_id,))
+                borrowed_count = cursor.fetchone()[0]
+
+                # 대출 가능한 권수 계산
+                max_allowed = 3
+                remaining_borrow = max(0, max_allowed - borrowed_count)
+                
+            return render_template(
+                'dashboard.html', 
+                rentals=rental_data, 
+                user_id=user_id,
+                remaining_borrow=remaining_borrow)
+        
+            # 현재 빌릴 수 있는 권 수와 연체 기간이 지났는지
+            # 연체 중이라면 언제까지 대출이 불가능한지 표시
                 
         except sqlite3.Error as e:
             print(f'Database error : {e}')
@@ -178,13 +212,28 @@ def init_routes(app):
             return redirect(url_for('login'))
 
         # 대출 날짜와 기한 계산
-        rentdate = datetime.now()
-        duedate = (rentdate + timedelta(days=1)).strftime('%Y-%m-%d')
-        rentdate = rentdate.strftime('%Y-%m-%d')
-
+        rentdate, duedate = get_dates()
         
         try:
-            # 1단계 : 책의 대출 가능 상태를 업데이트
+            # 1단계 : 사용자가 책을 몇 권 빌렸는지 체크
+            with sqlite3.connect(db) as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT COUNT(*) FROM Rental WHERE User_ID = ?
+                """, (user_id,))
+                
+            borrow_cnt = cursor.fetchone()[0]
+            
+            if borrow_cnt >= 3:
+                return f"""
+                <script>
+                    alert("최대 대출권수 3권을 초과할 수 없습니다.\\n책을 반납해주신 후 다시 대출해 주세요.");
+                    window.location.href = "{url_for('dashboard')}";
+                </script>
+                """
+
+            
+            # 2단계 : 책의 대출 가능 상태를 업데이트
             with sqlite3.connect(db) as conn:
                 cursor = conn.cursor()
                 cursor.execute("""
@@ -193,7 +242,7 @@ def init_routes(app):
                 """, (isbn,))
                 conn.commit() # 첫번째 단계 종료,
                 
-            # 2단계: 대출 정보를 기록
+            # 3단계: 대출 정보를 기록
             with sqlite3.connect(db) as conn:
                 cursor = conn.cursor()
                 cursor.execute("SELECT MAX(RentalID) FROM Rental")
@@ -231,3 +280,9 @@ def init_routes(app):
         except sqlite3.Error as e:
             print(f'Database error : {e}')
             return str(e), 500
+        
+        
+def get_dates():
+    rentdate = datetime.now()
+    duedate = rentdate + timedelta(days=1)
+    return rentdate.strftime("%Y-%m-%d"), duedate.strftime('%Y-%m-%d')
