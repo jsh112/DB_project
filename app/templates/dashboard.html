@@ -101,6 +101,11 @@
                 <td>{{ rental.title }}</td>
                 <td>{{ rental.RentalDate }}</td>
                 <td>{{ rental.DueDate }}</td>
+                <td>
+                    <form action="{{ url_for('return_book', rent_id=rental.RentalID) }}" method="POST" onsubmit="return confirm('정말로 이 책을 반납하시겠습니까?');">
+                        <button type="submit" class="btn-return">반납</button>
+                    </form>
+                </td>                
             </tr>
             {% endfor %}
         </tbody>

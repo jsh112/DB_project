@@ -36,9 +36,26 @@
                     <div>
                         {% if user_id %}
                             {% if book['available_rent'] | int == 1 %}
-                                <!-- 로그인 상태 + 대출 가능 -->
+                        <!-- 로그인 상태 + 대출 가능 -->
+                        <form action="{{ url_for('borrow', isbn=book['ISBN']) }}"
+                              method="POST"
+                              style="display: inline;">
+                            <input type="hidden"
+                                   name="user_id"
+                                   value="{{ user_id }}">
+                            <button type="submit"
+                                    style="background-color: rgb(93, 93, 179); color: white; border: none; padding: 5px 10px; cursor: pointer;
+                                    width: 50px; height: 30px;"
+                                    onclick="return confirm('이 책을 대출하시겠습니까?');">
+                                대출
+                            </button>
+                        </form>
                             {% else %}
-                                <!-- 로그인 상태 + 대출 불가능 -->
+                        <!-- 로그인 상태 + 대출 불가능 -->
+                        <button style="background-color: gray; color: white; border: none; padding: 5px 10px; cursor: not-allowed;"
+                                disabled>
+                            대출 불가
+                        </button>
                             {% endif %}
                         {% endif %}
                     </div>
