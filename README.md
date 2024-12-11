@@ -72,7 +72,6 @@ This project involves the design and implementation of a database system for boo
 =======
 ## Use
 - **Python**, **JavaScript**, **HTML**, **CSS**
->>>>>>> bdbe983896f8680bfcd16082a35b623d9906f81a
 
 ## Table Descriptions
 
