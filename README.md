@@ -6,6 +6,9 @@ This project involves the design and implementation of a database system for boo
 
 ---
 
+## Use
+- **Python**, **JavaScript**, **HTML**, **CSS**
+
 ## Table Descriptions
 
 ### **Book** - Table for Book Information
