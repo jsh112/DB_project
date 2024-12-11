@@ -4,7 +4,70 @@
 
 This project involves the design and implementation of a database system for book rental management. Each table manages information related to books, users, rental records, and reservations, providing a structured approach to the core functionalities of the system.
 
+## Development Environment
+
+* **Python** : Using `Flask`, `session`
+* **HTML** 
+* **CSS**
+* **JavaScript**
+
 ---
+
+### Explanation
+```
+📦DB_project
+ ┣ 📂app
+ ┃ ┣ 📂static
+ ┃ ┃ ┗ 📂css
+ ┃ ┃ ┃ ┣ 📜home.css
+ ┃ ┃ ┃ ┗ 📜main.css
+ ┃ ┣ 📂templates
+ ┃ ┃ ┣ 📜base.html
+ ┃ ┃ ┣ 📜dashboard.html
+ ┃ ┃ ┣ 📜home.html
+ ┃ ┃ ┣ 📜login.html
+ ┃ ┃ ┣ 📜search.html
+ ┃ ┃ ┗ 📜signup.html
+ ┃ ┣ 📜book_rental_system.py
+ ┃ ┣ 📜routes.py
+ ┃ ┗ 📜__init__.py
+ ┣ 📜.gitignore
+ ┣ 📜library.csv
+ ┣ 📜library.db
+ ┣ 📜main.py
+ ┗ 📜README.md
+```
+
+* **app directory**
+
+    The `app` directory contains the core application files for the project. It is structured as follows:
+
+    * **static**
+        This directory holds static files like CSS and images used by the application.
+        - `css/`
+            Contains stylesheets for the application.
+            - `home.css`: Styles specific to the home page.
+            - `main.css`: Global styles for the application.
+
+    * **templates**
+        Stores all HTML templates for rendering dynamic web pages.
+        - `base.html`: Base template for consistent layout.
+        - `dashboard.html`: User dashboard page.
+        - `home.html`: Home page for book recommendations.
+        - `login.html`: Login page.
+        - `search.html`: Search results page.
+        - `signup.html`: User signup page.
+
+    * **book_rental_system.py**
+        The main logic for managing book rentals, including borrowing and returning books.
+
+    * **routes.py**
+        Contains all the route definitions and request handlers for the application.
+
+    * **__init__.py**
+        Marks the `app` directory as a Python package and initializes the application.
+
+  
 
 ## Table Descriptions
 
