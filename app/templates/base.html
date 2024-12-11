@@ -34,12 +34,11 @@
             style="text-decoration: none; color: blue; border: 1px solid blue; padding: 5px 10px; border-radius: 5px; text-align: center;">
                 로그아웃
             </a>
-            <!--회원탈퇴 하는 버튼-->
-            <a href="javascript:void(0);" 
-            onclick="confirmWithdraw()" 
-            style="text-decoration: none; color: blue; border: 1px solid blue; padding: 5px 10px; border-radius: 5px; text-align: center;">
-                회원탈퇴
-            </a>
+            <form action="{{ url_for('withdraw_account') }}" method="POST" style="display: inline;">
+                <button type="submit" style="text-decoration: none; color: blue; border: 1px solid blue; padding: 8px 10px; border-radius: 5px; text-align: center;">
+                    회원탈퇴
+                </button>
+            </form>
         </div>
         <!--로그아웃 시에 js 사용-->
         <script>

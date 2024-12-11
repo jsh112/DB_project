@@ -417,10 +417,50 @@ def init_routes(app):
     def withdraw_account():
         
         user_id = session.get('user_id')
-        
-        with sqlite3.connect(db) as conn:
-            cursor = conn.cursor()
-            query = """ 
-                SELECT User
-            """
-        return render_template('home.html')
+        # print(f'{user_id}')
+        try:
+            with sqlite3.connect(db) as conn:
+                cursor = conn.cursor()
+                """
+                    1. 책을 빌린 사람
+                    2. 연체된 사람
+                    -> COUNT가 0이 아니면 탈퇴 불가능
+                """
+                today, _ = get_dates()
+                query = """
+                    SELECT COUNT(*)
+                    FROM Rental
+                    WHERE User_ID = ?
+                    AND (
+                        JULIANDAY(DueDate) < JULIANDAY(?, 'localtime') -- 연체 상태
+                        OR JULIANDAY(DueDate) >= JULIANDAY(?, 'localtime') -- 책을 빌린 상태 (반납 기한이 지나지 않음)
+                    );
+                """
+                cursor.execute(query, (user_id, today, today))
+                not_withdraw = cursor.fetchone()[0]
+                # print(f'{not_withdraw}')
+                
+                # 탈퇴 불가능한 상태
+                if not_withdraw != 0:
+                    return f"""
+                    <script>
+                        alert("탈퇴가 불가능합니다.");
+                        window.location.href = "{url_for('home')}";
+                    </script>
+                    """
+                else:
+                    cursor.execute("""
+                        DELETE FROM User WHERE id = ?
+                    """, (user_id,))
+                    conn.commit()
+                
+                    # 세션 초기화
+                    session.clear()
+                    return f"""
+                    <script>
+                        alert("회원탈퇴가 성공적으로 완료되었습니다.");
+                        window.location.href = "{url_for('home')}";
+                    </script>
+                    """
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
