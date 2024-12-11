@@ -13,7 +13,6 @@ This project involves the design and implementation of a database system for boo
 
 ---
 
-<<<<<<< HEAD
 ### Explanation
 ```
 📦DB_project
