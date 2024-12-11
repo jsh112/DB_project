@@ -4,6 +4,11 @@ from datetime import datetime, timedelta
 
 db = 'library.db'
 
+def get_dates():
+    rentdate = datetime.now()
+    duedate = rentdate + timedelta(days=1)
+    return rentdate.strftime("%Y-%m-%d"), duedate.strftime('%Y-%m-%d')
+
 def init_routes(app):
     @app.route('/')
     def home():
@@ -15,10 +20,12 @@ def init_routes(app):
                 cursor = conn.cursor()
                 
                 # 랜덤으로 도서 추천
-                cursor.execute(
-                    'SELECT author, title, ISBN, available_rent FROM Book  \
-                    ORDER BY RANDOM() LIMIT 10'
-                )
+                cursor.execute("""
+                    SELECT author, title, ISBN, available_rent
+                    FROM Book
+                    WHERE available_rent = 1  
+                    ORDER BY RANDOM() LIMIT 10
+                """)
                 recommended_books = cursor.fetchall()
                 
             # 로그인 상태와 렌더링 하자.
@@ -103,7 +110,27 @@ def init_routes(app):
                     cursor.execute(query, (today, _id,_id))
                     result = cursor.fetchall()
                     
+                    # query가 없으면 [] 반환 -> if not으로 확인
+                    # 쿼리가 없다(연체가 없다) -> 1 반환
+                    # 쿼리가 있다 -> 0 반환
                     available_status = 1 if not result else 0
+                    # 연체한 경우
+                    if not available_status:
+                        # 최대 연체일을 User Table에 업데이트
+                        overdue_query = """
+                            UPDATE User
+                            SET overdue_count = (
+                                SELECT 
+                                    COALESCE(MAX(JULIANDAY(?) - JULIANDAY(DueDate)), 0)
+                                FROM Rental
+                                WHERE User_ID = ?
+                                AND JULIANDAY(DueDate) < JULIANDAY(?)
+                            )
+                            WHERE id = ?;
+                        """
+                        cursor.execute(overdue_query, (today, user[0], today, user[0]))
+                    
+                        
                     cursor.execute("""
                         UPDATE User
                         SET available = ?
@@ -118,6 +145,7 @@ def init_routes(app):
                 else:
                     return render_template('login.html', error="ID와 비밀번호를 다시 입력해 주세요.")
             except sqlite3.Error as e:
+                conn.rollback()
                 print(f'Database error : {e}')
 
         return render_template('login.html')
@@ -140,14 +168,14 @@ def init_routes(app):
             
             try:
                 conn = sqlite3.connect(db)
-                cursor = conn.cursor
+                cursor = conn.cursor()
                 
                 # 회원가입 한 정보를 쿼리에 넣어야함
-                cursor.execute(
-                    "INSERT INTO User \
-                    (id, password, name, email, avaiable, overdue_count) \
-                    VALUES (?, ?, ?, ?, ?, ?)", (_id, password, name, email, 1, 0)
-                )
+                cursor.execute("""
+                    INSERT INTO User
+                    (id, password, name, email, available, overdue_count)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """, (_id, password, name, email, 1, 0))
                 
                 conn.commit()
             except sqlite3.Error as e:
@@ -193,6 +221,16 @@ def init_routes(app):
                 """, (user_id,))
 
                 rentals = cursor.fetchall()
+                
+                # 대시보드에서 로그인한 사람 정보 출력
+                cursor.execute(""" 
+                    SELECT name
+                    FROM User
+                    WHERE id = ?
+                """, (user_id,))
+                
+                user_name = cursor.fetchone()[0]
+                
                 # 연체일 계산
                 rental_data = []
                 for rental in rentals:
@@ -225,6 +263,7 @@ def init_routes(app):
                 rentals=rental_data, 
                 user_id=user_id,
                 available=avail,
+                user_name = user_name,
                 remaining_borrow=remaining_borrow)
                 
         except sqlite3.Error as e:
@@ -279,12 +318,31 @@ def init_routes(app):
                     </script>
                     """
                 
-                # 2단계: 책 대출 가능 상태 업데이트
+                query = """ 
+                    UPDATE User
+                    SET available = CASE
+                        WHEN (
+                            (SELECT COUNT(*) FROM Rental WHERE User_ID = ?) >= 2
+                            OR
+                            (SELECT COUNT(*) FROM Rental WHERE User_ID = ? AND JULIANDAY(DueDate) < JULIANDAY(?)) > 0
+                        ) THEN 0
+                        ELSE 1
+                    END
+                    WHERE id = ?;
+                """
+                
+                cursor.execute(query, (user_id, user_id, rentdate, user_id))
+                
+                conn.commit()
+                
+                # 3단계: 책 대출 가능 상태 업데이트
                 cursor.execute("""
                     UPDATE Book SET available_rent = 0 WHERE ISBN = ?;
                 """, (isbn,))
                 
-                # 3단계: 대출 정보 삽입
+                conn.commit()
+                
+                # 4단계: 대출 정보 삽입
                 cursor.execute("SELECT MAX(RentalID) FROM Rental;")
                 max_rental_id = cursor.fetchone()[0]
                 rent_idx = max_rental_id + 1 if max_rental_id else 1
@@ -295,6 +353,7 @@ def init_routes(app):
                 """, (rent_idx, rentdate, isbn, user_id, duedate))
                 
                 conn.commit()
+                
                 
             return redirect(url_for('home'))
             
@@ -349,8 +408,19 @@ def init_routes(app):
             conn.rollback()
             return str(e), 500
         
+    # 회원탈퇴 기능
+    """ 
+        만약 연체된 기록이 있거나 현재 책을 대출중이라면 회원탈퇴가 불가능.
+        책을 빌린 흔적이 없다면 User Table에서 삭제시킨다.
+    """
+    @app.route('/withdraw', methods=['POST'])
+    def withdraw_account():
         
-def get_dates():
-    rentdate = datetime.now()
-    duedate = rentdate + timedelta(days=1)
-    return rentdate.strftime("%Y-%m-%d"), duedate.strftime('%Y-%m-%d')
+        user_id = session.get('user_id')
+        
+        with sqlite3.connect(db) as conn:
+            cursor = conn.cursor()
+            query = """ 
+                SELECT User
+            """
+        return render_template('home.html')

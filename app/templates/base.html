@@ -34,6 +34,12 @@
             style="text-decoration: none; color: blue; border: 1px solid blue; padding: 5px 10px; border-radius: 5px; text-align: center;">
                 로그아웃
             </a>
+            <!--회원탈퇴 하는 버튼-->
+            <a href="javascript:void(0);" 
+            onclick="confirmWithdraw()" 
+            style="text-decoration: none; color: blue; border: 1px solid blue; padding: 5px 10px; border-radius: 5px; text-align: center;">
+                회원탈퇴
+            </a>
         </div>
         <!--로그아웃 시에 js 사용-->
         <script>
@@ -52,6 +58,32 @@
                         }
                         else{
                             alert("로그아웃에 실패했습니다. 다시 시도해주세요.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error : ", error);
+                        alert("네트워크 오류가 발생했습니다. 다시 시도해주세요.")
+                    })
+                }
+            }
+        </script>
+        <!--회원탈퇴 시에 js 사용-->
+        <script>
+            // 위에서 정의한 confirmLogout 함수가 버튼이 눌리면 실행
+            function confirmWithdraw(){
+                if (confirm("정말로 탈퇴하시겠습니까?")) {
+                    // 서버로 로그아웃 요청 보내기
+                    fetch("{{ url_for('withdraw_account') }}", {
+                        method : "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    })
+                    .then(response => {
+                        if(response.ok){
+                            // 로그아웃 성공 시 홈페이지로 이동
+                            window.location.href = "{{ url_for('home') }}";
+                        }
+                        else{
+                            alert("회원탈퇴에 실패했습니다. 다시 시도해주세요.");
                         }
                     })
                     .catch(error => {
