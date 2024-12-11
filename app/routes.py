@@ -83,7 +83,6 @@ def init_routes(app):
             try:
                 with sqlite3.connect(db) as conn:
                     cursor = conn.cursor()
-                    
                     # 받아온 ID와 pw가 db에 있는지 확인
                     cursor.execute('SELECT id, name FROM User WHERE id = ? AND password = ?', (_id, password))
                     user = cursor.fetchone()
@@ -92,12 +91,35 @@ def init_routes(app):
                     # 사용자 ID를 session에 저장
                     session['user_id'] = user[0]
                     session['name'] = user[1]
+                    
+                    # 로그인 때마다 연체 여부를 갱신하자.
+                    today, _ = get_dates()
+                    query = """
+                        SELECT User_ID
+                        FROM Rental
+                        WHERE (DATE(DueDate) < DATE(?) OR (SELECT COUNT(*) FROM Rental WHERE User_ID = ?) >= 3)
+                        AND User_ID = ?;
+                    """
+                    cursor.execute(query, (today, _id,_id))
+                    result = cursor.fetchall()
+                    
+                    available_status = 1 if not result else 0
+                    cursor.execute("""
+                        UPDATE User
+                        SET available = ?
+                        WHERE id = ?;
+                    """, (available_status, user[0]))
+                        
+                    conn.commit()
+                    
                     # url_for -> 함수 이름을 사용하자.
                     return redirect(url_for('home'))
+                
                 else:
                     return render_template('login.html', error="ID와 비밀번호를 다시 입력해 주세요.")
             except sqlite3.Error as e:
                 print(f'Database error : {e}')
+
         return render_template('login.html')
     
     # 로그아웃
@@ -153,6 +175,15 @@ def init_routes(app):
                 conn.row_factory = sqlite3.Row  # 결과를 dict 형태로 반환
                 cursor = conn.cursor()
                 
+                # html에 연체인 경우를 다르게 띄워주기 위해서
+                cursor.execute("""
+                    SELECT available
+                    FROM User
+                    WHERE id = ?;
+                """, (user_id,))
+                
+                avail = cursor.fetchone()[0]
+                
                 # 대출한 책 정보 가져오기
                 cursor.execute("""
                     SELECT Rental.RentalID, Book.title, Rental.RentalDate, Rental.DueDate
@@ -162,7 +193,6 @@ def init_routes(app):
                 """, (user_id,))
 
                 rentals = cursor.fetchall()
-                
                 # 연체일 계산
                 rental_data = []
                 for rental in rentals:
@@ -194,6 +224,7 @@ def init_routes(app):
                 'dashboard.html', 
                 rentals=rental_data, 
                 user_id=user_id,
+                available=avail,
                 remaining_borrow=remaining_borrow)
                 
         except sqlite3.Error as e:
@@ -221,11 +252,30 @@ def init_routes(app):
                 """, (user_id,))
                 borrow_cnt = cursor.fetchone()[0]
                 
+                # 2단계 : available 확인
+                
+                cursor.execute("""
+                    SELECT available
+                    FROM User
+                    WHERE id = ?
+                """, (user_id,))
+                
+                can_rent = cursor.fetchone()[0]
+                not_available = 1 if not can_rent else 0
+                
                 if borrow_cnt >= 3:
                     return f"""
                     <script>
                         alert("최대 대출권수 3권을 초과할 수 없습니다.\\n책을 반납해주신 후 다시 대출해 주세요.");
-                        window.location.href = "{url_for('dashboard')}";
+                        window.location.href = "{request.referrer}";
+                    </script>
+                    """
+                    
+                if not_available:
+                    return f"""
+                    <script>
+                        alert("현재 연체중입니다.");
+                        window.location.href = "{request.referrer}";
                     </script>
                     """
                 
@@ -283,7 +333,7 @@ def init_routes(app):
                 """, (user_id,))
                 remaining_rentals = cursor.fetchone()[0]
 
-                if remaining_rentals == 0:
+                if remaining_rentals != 0:
                     cursor.execute("""
                         UPDATE User SET available = 1 WHERE id = ?;
                     """, (user_id,))
