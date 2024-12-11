@@ -69,8 +69,6 @@ This table manages reservation information for unavailable books.
 
 ## Key Features
 
-## Key Features
-
 - **Book Management**: The `Book` table allows for seamless management of book information, including availability for rental.
 - **User Management**: The `User` table keeps track of user credentials, rental eligibility, and overdue records.
 - **Rental Management**: The `Rental` table provides detailed logs of borrowed books, their due dates, and the borrowing user.
