@@ -74,8 +74,6 @@ def init_routes(app):
                 error = f"데이터베이스 오류: {e}"
                 books = []
                 total_pages = 0
-            finally:
-                conn.close()
 
             return render_template('search.html', books=books, query=query, error=error, page=page, per_page=per_page, total_pages=total_pages)
         
@@ -181,9 +179,6 @@ def init_routes(app):
             except sqlite3.Error as e:
                 print(f'DataBase error : {e}')
                 return e
-
-            finally:
-                conn.close()
                 
             return redirect(url_for('login'))
         
