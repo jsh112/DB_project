@@ -66,10 +66,20 @@ This table manages reservation information for unavailable books.
 
 ## Key Features
 
-- **Book Management**: Manage book information and rental availability through the `Book` table.
-- **User Management**: Manage user accounts, rental availability, and overdue days via the `User` table.
-- **Rental Records**: Track rental history and return dates using the `Rental` table.
-- **Reservation System**: Manage reservation details for unavailable books with the `Reserve` table.
+## Key Features
+
+- **Book Management**: The `Book` table allows for seamless management of book information, including availability for rental.
+- **User Management**: The `User` table keeps track of user credentials, rental eligibility, and overdue records.
+- **Rental Management**: The `Rental` table provides detailed logs of borrowed books, their due dates, and the borrowing user.
+- **Reservation System**: The `Reserve` table allows users to reserve books that are currently unavailable.
+- **Login System**: Implements a secure login system that validates user credentials and updates overdue status upon login.
+- **Search Functionality**: Users can search for books by title, with results paginated for improved usability.
+- **Dashboard**: Displays user-specific information, including borrowed books, overdue status, and remaining borrowable books.
+- **Book Borrowing**: Enforces borrowing rules such as maximum allowed books and checks for overdue status before permitting new rentals.
+- **Book Return**: Updates the database to mark books as returned and recalculates user availability status.
+- **Account Deletion**: Prevents users with active loans or overdue records from deleting their accounts and clears session data upon successful deletion.
+- **Error Handling**: Comprehensive database error handling ensures that transactions are rolled back in case of failures.
+- **Dynamic Recommendations**: The home page dynamically recommends 10 random books available for rental.
 
 ---
 
