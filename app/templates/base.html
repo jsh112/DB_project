@@ -23,6 +23,7 @@
         <!--로그인이 된 상태-->
         {% if session.get('user_id') %}
         <div class="user-info" style="display: flex; align-items: center; gap: 15px;">
+
             <!--알림 창-->
             <a href="javascript:void(0);" 
             onclick="toggleNotificationModal()" 
