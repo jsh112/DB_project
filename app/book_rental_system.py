@@ -112,13 +112,3 @@ class LibraryDatabase:
         finally:
             # Close the database connection
             self.conn.close()
-
-    def close(self):
-        '''Close the database connection.'''
-        self.conn.close()
-        print("Database connection closed.")
-
-    '''
-    def showBooks(self, ...):
-        
-    '''

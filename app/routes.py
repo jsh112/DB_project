@@ -460,6 +460,9 @@ def init_routes(app):
         except sqlite3.Error as e:
             print(f"Database error: {e}")
             
-    @app.route('/reservation/<isbn>')
+    @app.route('/reservation/<isbn>', methods=['GET', 'POST'])
+    # hi
     def reservation(isbn):
         pass
+    
+    
