@@ -36,8 +36,16 @@
                     <div style="margin-left: auto;">
                         {% if book['available_rent'] | int == 1 %}
                             <!-- 대출 가능 -->
+                            <form action="{{ url_for('borrow', isbn=book['ISBN']) }}" method="POST" style="display:inline;">
+                                <button type="submit" style="background-color: rgb(93, 93, 179); color: white; border: none; padding: 10px 20px; cursor: pointer;">
+                                    대출
+                                </button>
+                            </form>
                         {% else %}
                             <!-- 대출 불가능 -->
+                            <button style="background-color: gray; color: white; border: none; padding: 10px 20px; cursor: not-allowed;" disabled>
+                                대출
+                            </button>
                         {% endif %}
                     </div>
                 </li>

@@ -23,6 +23,47 @@
         <!--로그인이 된 상태-->
         {% if session.get('user_id') %}
         <div class="user-info" style="display: flex; align-items: center; gap: 15px;">
+
+            <!--알림 창-->
+            <a href="javascript:void(0);" 
+            onclick="toggleNotificationModal()" 
+            style="display: inline-block; margin-left: 10px; text-align: center;">
+            <img src="{{ url_for('static', filename='images/bell.png') }}" 
+                alt="알림" 
+                style="width: 30px; height: 30px; vertical-align: middle;">
+            </a>
+
+            <!-- 모달 구조 -->
+            <div id="notificationModal" 
+                style="display: none; position: absolute; left: 1070px; top: 140px; 
+                        width: 250px; padding: 15px; background: white; border: 1px solid #ccc; 
+                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); border-radius: 8px; z-index: 1000;">
+                <h3 style="margin: 0; margin-bottom: 10px; font-size: 16px;">알림</h3>
+                <p style="margin: 0;">새로운 알림이 없습니다.</p>
+            </div>
+
+            <!-- JavaScript -->
+            <script>
+            function toggleNotificationModal() {
+                const modal = document.getElementById('notificationModal');
+                if (modal.style.display === 'none' || modal.style.display === '') {
+                    modal.style.display = 'block';
+                } else {
+                    modal.style.display = 'none';
+                }
+            }
+
+            // Close the modal if clicked outside (optional)
+            document.addEventListener('click', function(event) {
+                const modal = document.getElementById('notificationModal');
+                const bell = event.target.closest('a'); // The bell button
+                if (!modal.contains(event.target) && !bell) {
+                    modal.style.display = 'none';
+                }
+            });
+            </script>
+
+            
             <!-- 내 정보 버튼 -->
             <a href="{{ url_for('dashboard') }}" 
             style="text-decoration: none; color: blue; border: 1px solid blue; padding: 5px 10px; border-radius: 5px; text-align: center;">
@@ -34,6 +75,11 @@
             style="text-decoration: none; color: blue; border: 1px solid blue; padding: 5px 10px; border-radius: 5px; text-align: center;">
                 로그아웃
             </a>
+            <form action="{{ url_for('withdraw_account') }}" method="POST" style="display: inline;">
+                <button type="submit" style="text-decoration: none; color: blue; border: 1px solid blue; padding: 8px 10px; border-radius: 5px; text-align: center;">
+                    회원탈퇴
+                </button>
+            </form>
         </div>
         <!--로그아웃 시에 js 사용-->
         <script>
@@ -52,6 +98,32 @@
                         }
                         else{
                             alert("로그아웃에 실패했습니다. 다시 시도해주세요.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error("Error : ", error);
+                        alert("네트워크 오류가 발생했습니다. 다시 시도해주세요.")
+                    })
+                }
+            }
+        </script>
+        <!--회원탈퇴 시에 js 사용-->
+        <script>
+            // 위에서 정의한 confirmLogout 함수가 버튼이 눌리면 실행
+            function confirmWithdraw(){
+                if (confirm("정말로 탈퇴하시겠습니까?")) {
+                    // 서버로 로그아웃 요청 보내기
+                    fetch("{{ url_for('withdraw_account') }}", {
+                        method : "POST",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    })
+                    .then(response => {
+                        if(response.ok){
+                            // 로그아웃 성공 시 홈페이지로 이동
+                            window.location.href = "{{ url_for('home') }}";
+                        }
+                        else{
+                            alert("회원탈퇴에 실패했습니다. 다시 시도해주세요.");
                         }
                     })
                     .catch(error => {
