@@ -1,3 +1,5 @@
 *.jar
 .vscode/
 __pycache__/
+*.prob
+*.sqbpro
