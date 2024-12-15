@@ -41,6 +41,7 @@ def init_routes(app):
         query = ''
         page = request.args.get('page', 1, type=int)
         per_page = 50
+        user_id = session.get('user_id')
 
         if request.method == 'POST':
             query = request.form.get('query', '').strip()
@@ -75,7 +76,7 @@ def init_routes(app):
                 books = []
                 total_pages = 0
 
-            return render_template('search.html', books=books, query=query, error=error, page=page, per_page=per_page, total_pages=total_pages)
+            return render_template('search.html', user_id=user_id, books=books, query=query, error=error, page=page, per_page=per_page, total_pages=total_pages)
         
     # 로그인
     @app.route('/login/', methods=['GET', 'POST'])
@@ -459,8 +460,62 @@ def init_routes(app):
                     """
         except sqlite3.Error as e:
             print(f"Database error: {e}")
-            
-    @app.route('/reservation/<isbn>', methods=['GET', 'POST'])
-    def reservation(isbn):
-        pass
+    
+    @app.route('/review/<isbn>', methods=['POST'])
+    def review(isbn):
+        user_id = session.get('user_id')
+        if not user_id:
+            return redirect(url_for('login'))
+
+        rating = request.form.get('rating', type=float)
+        comment = request.form.get('comment', '').strip()
+        create_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+        try:
+            with sqlite3.connect(db) as conn:
+                cursor = conn.cursor()
+
+                # 해당 책에 대한 기존 리뷰 수를 계산
+                cursor.execute("SELECT COUNT(*) FROM Review WHERE isbn = ?", (isbn,))
+                review_count = cursor.fetchone()[0]
+                anonymous_number = review_count + 1
+                anonymous_name = f"익명{anonymous_number}"
+
+                # 리뷰 저장
+                cursor.execute("""
+                    INSERT INTO Review (user_id, isbn, rating, comment, create_date, anonymous_name)
+                    VALUES (?, ?, ?, ?, ?, ?);
+                """, (user_id, isbn, rating, comment, create_date, anonymous_name))
+
+                conn.commit()
+
+            return redirect(url_for('book_details', isbn=isbn))
+
+        except sqlite3.Error as e:
+            print(f"Database Error: {e}")
+            return str(e), 500
+        
+    @app.route('/book/<isbn>')
+    def book_details(isbn):
+        try:
+            with sqlite3.connect(db) as conn:
+                conn.row_factory = sqlite3.Row
+                cursor = conn.cursor()
+
+                # 책 정보 가져오기
+                cursor.execute("SELECT * FROM Book WHERE ISBN = ?", (isbn,))
+                book = cursor.fetchone()
+
+                if not book:
+                    return "Book not found", 404
+
+                # 해당 책의 리뷰 가져오기
+                cursor.execute("SELECT * FROM Review WHERE isbn = ?", (isbn,))
+                reviews = cursor.fetchall()
+
+            return render_template('book_details.html', book=book, reviews=reviews, isbn=isbn)
+
+        except sqlite3.Error as e:
+            print(f"Database Error: {e}")
+            return str(e), 500
 

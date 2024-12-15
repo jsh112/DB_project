@@ -24,7 +24,8 @@ class LibraryDatabase:
                     title TEXT NOT NULL,
                     published_year INTEGER NOT NULL,
                     ISBN TEXT PRIMARY KEY,
-                    Available_rent INT DEFAULT 1
+                    Available_rent INT DEFAULT 1,
+                    penalty_date TEXT
                 );
             ''')
 
@@ -53,15 +54,19 @@ class LibraryDatabase:
                 );
             ''')
 
-            # Reserve Table
-            self.cursor.execute('''
-                CREATE TABLE IF NOT EXISTS Reserve(
-                    ISBN TEXT NOT NULL,
-                    User_id TEXT NOT NULL,
-                    Reserved_date TEXT,
-                    PRIMARY KEY(ISBN, User_id),
-                    FOREIGN KEY (ISBN) REFERENCES Book(ISBN),
-                    FOREIGN KEY (User_id) REFERENCES User(id)
+            # Review Table
+            
+            self.cursor.execute(''' 
+                CREATE TABLE IF NOT EXISTS Review(
+                    review_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id TEXT,
+                    isbn TEXT,
+                    rating REAL CHECK(rating >= 1 AND rating <= 5),
+                    comment TEXT,
+                    create_date TEXT,
+                    anonymous_name TEXT,
+                    FOREIGN KEY (user_id) REFERENCES User(id),
+                    FOREIGN KEY (isbn) REFERENCES Book(ISBN)
                 );
             ''')
 
