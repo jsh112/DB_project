@@ -23,9 +23,11 @@ This project involves the design and implementation of a database system for boo
  ┃ ┃ ┃ ┗ 📜main.css
  ┃ ┣ 📂templates
  ┃ ┃ ┣ 📜base.html
+ ┃ ┃ ┣ 📜book_details.html
  ┃ ┃ ┣ 📜dashboard.html
  ┃ ┃ ┣ 📜home.html
  ┃ ┃ ┣ 📜login.html
+ ┃ ┃ ┣ 📜review.html
  ┃ ┃ ┣ 📜search.html
  ┃ ┃ ┗ 📜signup.html
  ┃ ┣ 📜book_rental_system.py
@@ -118,15 +120,29 @@ This table manages book rental information.
 
 ---
 
-### **Reserve** - Table for Reservation Information
+### **Review** - Table for Review Information
 
-This table manages reservation information for unavailable books.
+This table manages reviews information for each books.
 
-| Column Name        | Data Type   | Description                                   |
-|--------------------|-------------|----------------------------------------------|
-| `ISBN`             | `TEXT`      | ISBN of the reserved book                    |
-| `User_id`          | `TEXT`      | ID of the user who reserved the book         |
-| `Reserve_date`     | `TEXT`      | Date when the reservation was made           |
+| **Column Name**    | **Data Type** | **Description**                                          |
+|--------------------|---------------|---------------------------------------------------------|
+| `review_id`        | `INTEGER`     | Unique identifier for each review (Primary Key)         |
+| `user_id`          | `TEXT`        | ID of the user who submitted the review (Foreign Key)   |
+| `isbn`             | `TEXT`        | ISBN of the book being reviewed                         |
+| `rating`           | `REAL`        | Rating given by the user (between 1 and 5)              |
+| `comment`          | `TEXT`        | User's review comment                                   |
+| `create_date`      | `TEXT`        | Date and time when the review was submitted             |
+| `anonymous_name`   | `TEXT`        | Anonymous name displayed for the review                 |
+
+### **Constraints**
+
+- **Rating Constraint:**  
+  The `rating` must be a value between **1 and 5**.
+
+### **Relationships**
+
+- **`user_id`** is a foreign key referencing the `User` table.
+- **`isbn`** is a foreign key referencing the `Book` table.
 
 ---
 
@@ -135,7 +151,7 @@ This table manages reservation information for unavailable books.
 - **Book Management**: The `Book` table allows for seamless management of book information, including availability for rental.
 - **User Management**: The `User` table keeps track of user credentials, rental eligibility, and overdue records.
 - **Rental Management**: The `Rental` table provides detailed logs of borrowed books, their due dates, and the borrowing user.
-- **Reservation System**: The `Reserve` table allows users to reserve books that are currently unavailable.
+- **Review System**: The `Review` table allows users to review for each books.
 - **Login System**: Implements a secure login system that validates user credentials and updates overdue status upon login.
 - **Search Functionality**: Users can search for books by title, with results paginated for improved usability.
 - **Dashboard**: Displays user-specific information, including borrowed books, overdue status, and remaining borrowable books.
