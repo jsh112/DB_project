@@ -1,66 +1,78 @@
 {% extends "base.html" %}
 {% block title %}프로젝트용 도서관{% endblock %}
 {% block content %}
-    <h2>책 검색</h2>
-    <form action="{{ url_for('search') }}"
-          method="POST"
-          class="search-form">
-        <input type="text"
-               name="query"
-               placeholder="소장자료를 검색합니다."
-               required>
-        <input type="submit"
-               value="검색">
-    </form>
+<h2>책 검색</h2>
+<form action="{{ url_for('search') }}" method="POST" class="search-form">
+    <input type="text" name="query" placeholder="소장자료를 검색합니다." required>
+    <input type="submit" value="검색">
+</form>
 
-    <!-- Error Message Display -->
-    {% if error %}
-        <div class="error-message">
-            <p>{{ error }}</p>
-        </div>
-    {% endif %}
+<!-- Error Message Display -->
+{% if error %}
+<div class="error-message">
+    <p>{{ error }}</p>
+</div>
+{% endif %}
 
-    <!-- 추천 도서 리스트 -->
-    <div class="recommended-books">
-        <h3 style="text-align: center; margin-top: 20px;">추천 도서</h3>
-        <ul>
-            {% for book in recommended_books %}
-                <li style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <!-- 책 정보 -->
-                    <div>
-                        <strong>{{ book['title'] }}</strong><br>
-                        {{ book['author'] }}
-                    </div>
+<!-- 추천 도서 리스트 -->
+<div class="recommended-books">
+    <h3 style="text-align: center; margin-top: 20px;">추천 도서</h3>
+    <ul style="list-style-type: none; padding: 0;">
+        {% for book in recommended_books %}
+        <li style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; max-width: 800px; margin-left: auto; margin-right: auto;">
+            <!-- 책 정보 -->
+            <div style="flex: 1; min-width: 300px; margin-right: 20px; word-wrap: break-word; overflow-wrap: break-word;">
+                <a href="{{ url_for('book_details', isbn=book['ISBN']) }}" style="text-decoration: none; color: inherit;">
+                    <strong class="book-title" style="font-size: 1.2em; cursor: pointer; color: #2196F3;">{{ book['title'] }}</strong>
+                </a><br>
+                {{ book['author'] }}
+            </div>
 
-                    <!-- 대출 버튼 -->
-                    <div>
-                        {% if user_id %}
-                            {% if book['available_rent'] | int == 1 %}
-                        <!-- 로그인 상태 + 대출 가능 -->
-                        <form action="{{ url_for('borrow', isbn=book['ISBN']) }}"
-                              method="POST"
-                              style="display: inline;">
-                            <input type="hidden"
-                                   name="user_id"
-                                   value="{{ user_id }}">
-                            <button type="submit"
-                                    style="background-color: rgb(93, 93, 179); color: white; border: none; padding: 5px 10px; cursor: pointer;
-                                    width: 50px; height: 30px;"
-                                    onclick="return confirm('이 책을 대출하시겠습니까?');">
-                                대출
-                            </button>
-                        </form>
-                            {% else %}
-                        <!-- 로그인 상태 + 대출 불가능 -->
-                        <button style="background-color: gray; color: white; border: none; padding: 5px 10px; cursor: not-allowed;"
-                                disabled>
-                            대출 불가
-                        </button>
-                            {% endif %}
-                        {% endif %}
-                    </div>
-                </li>
-            {% endfor %}
-        </ul>
-    </div>
+            <!-- 버튼 섹션 -->
+            {% if user_id %}
+            <div>
+                <!-- 리뷰 작성 버튼 -->
+                <button onclick="toggleReviewForm(`{{ book['ISBN'] }}`)"
+                        style="margin-bottom: 10px; background-color: #2196F3; color: white; padding: 5px 10px; border: none; cursor: pointer;">
+                    리뷰 쓰기
+                </button>
+
+                <!-- 리뷰 작성 폼 (숨김 상태) -->
+                <form id="review-form-{{ book['ISBN'] }}" action="{{ url_for('review', isbn=book['ISBN']) }}" method="POST" style="display: none; margin-bottom: 10px;">
+                    <textarea name="comment" placeholder="리뷰를 작성하세요" rows="2" style="width: 100%;" required></textarea><br>
+                    <input type="number" name="rating" min="1" max="5" step="0.1" placeholder="별점 (1-5)" required><br>
+                    <button type="submit" style="background-color: #4CAF50; color: white; padding: 5px 10px; border: none; cursor: pointer; margin-top: 5px;">
+                        제출
+                    </button>
+                </form>
+
+                <!-- 대출 버튼 -->
+                {% if book['available_rent'] | int == 1 %}
+                <form action="{{ url_for('borrow', isbn=book['ISBN']) }}" method="POST" style="display: inline;">
+                    <button type="submit" style="background-color: rgb(93, 93, 179); color: white; border: none; padding: 5px 10px; cursor: pointer; width: 60px; height: 35px;"
+                            onclick="return confirm('이 책을 대출하시겠습니까?');">
+                        대출
+                    </button>
+                </form>
+                {% else %}
+                <button style="background-color: gray; color: white; border: none; padding: 5px 10px; cursor: not-allowed; width: 60px; height: 35px;" disabled>
+                    대출 불가
+                </button>
+                {% endif %}
+            </div>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+
+    <!-- JavaScript 함수 -->
+    <script>
+        function toggleReviewForm(isbn) {
+            const form = document.getElementById(`review-form-${isbn}`);
+            if (form) {
+                form.style.display = form.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+    </script>
+</div>
 {% endblock %}

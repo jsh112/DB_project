@@ -3,72 +3,135 @@
 {% block title %}책 검색 - Library{% endblock %}
 
 {% block content %}
-    <h2>책 검색</h2>
-    <form action="{{ url_for('search') }}" method="POST" class="search-form">
-        <input type="text" name="query" placeholder="검색할 책 제목을 입력하세요" value="{{ query }}" required>
-        <button type="submit">검색</button>
-    </form>
+<h2>책 검색</h2>
+<form action="{{ url_for('search') }}"
+      method="POST"
+      class="search-form">
+    <input type="text"
+           name="query"
+           placeholder="검색할 책 제목을 입력하세요"
+           value="{{ query }}"
+           required>
+    <button type="submit">검색</button>
+</form>
 
-    <!-- Error Message Display -->
-    {% if error %}
-        <div class="error-message">
-            <p>{{ error }}</p>
-        </div>
-    {% endif %}
+<!-- Error Message Display -->
+{% if error %}
+<div class="error-message">
+    <p>{{ error }}</p>
+</div>
+{% endif %}
 
-    <!-- 검색 결과 표시 -->
-    {% if books %}
-        <h3>검색 결과 ({{ books|length }}개): "{{ query }}"</h3>
-        <ul>
-            {% for book in books %}
-                <li style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <!-- 책 정보 -->
-                    <div style="flex: 1;">
-                        <strong>{{ book['title'] }}</strong> by {{ book['author'] }} ({{ book['published_year'] }})
-                        {% if book['available_rent'] | int == 1 %}
-                            <br><span style="color: rgb(37, 6, 243);">대출 가능</span>
-                        {% else %}
-                            <br><span style="color: red;">대출 불가능</span>
-                        {% endif %}
-                    </div>
-                    
-                    <!-- 버튼 -->
-                    <div style="margin-left: auto;">
-                        {% if book['available_rent'] | int == 1 %}
-                            <!-- 대출 가능 -->
-                            <form action="{{ url_for('borrow', isbn=book['ISBN']) }}" method="POST" style="display:inline;">
-                                <button type="submit" style="background-color: rgb(93, 93, 179); color: white; border: none; padding: 10px 20px; cursor: pointer;">
-                                    대출
-                                </button>
-                            </form>
-                        {% else %}
-                            <!-- 대출 불가능 -->
-                            <button style="background-color: gray; color: white; border: none; padding: 10px 20px; cursor: not-allowed;" disabled>
-                                대출
-                            </button>
-                        {% endif %}
-                    </div>
-                </li>
-            {% endfor %}
-        </ul>
-        
-
-        <!-- 페이징 네비게이션 -->
-        <div class="pagination">
-            {% if page > 1 %}
-                <a href="{{ url_for('search', query=query, page=page-1) }}">이전</a>
-            {% endif %}
-
-            <span>페이지 {{ page }}{% if total_pages > 0 %} / {{ total_pages }}{% endif %}</span>
-
-            {% if total_pages > page %}
-                <a href="{{ url_for('search', query=query, page=page+1) }}">다음</a>
+<!-- 검색 결과 표시 -->
+{% if books %}
+<h3>검색 결과 ({{ books|length }}개): "{{ query }}"</h3>
+<ul>
+    {% for book in books %}
+    <li
+        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 20px; border: 1px solid #ddd; border-radius: 8px; background-color: #fff; max-width: 1000px; margin-left: auto; margin-right: auto;">
+        <!-- 책 정보 -->
+        <div style="flex: 1; min-width: 400px; margin-right: 20px; word-wrap: break-word; overflow-wrap: break-word;">
+            <a href="{{ url_for('book_details', isbn=book['ISBN']) }}"
+               style="text-decoration: none; color: inherit;">
+                <strong style="color: #2196F3; font-size: 1.2em;">{{ book['title'] }}</strong>
+            </a><br>
+            {{ book['author'] }} ({{ book['published_year'] }})
+            {% if book['available_rent'] | int == 1 %}
+            <br><span style="color: rgb(37, 6, 243);">대출 가능</span>
+            {% else %}
+            <br><span style="color: red;">대출 불가능</span>
             {% endif %}
         </div>
-    {% elif query %}
-        <p>검색 결과가 없습니다.</p>
+
+        <!-- 버튼 섹션 -->
+        <div style="margin-left: auto;">
+            {% if user_id %}
+            <!-- 리뷰 작성 버튼 -->
+            <button onclick="toggleReviewForm(`{{ book['ISBN'] }}`)"
+                    style="margin-bottom: 10px; background-color: #2196F3; color: white; padding: 8px 12px; border: none; cursor: pointer; border-radius: 4px;">
+                리뷰 쓰기
+            </button>
+
+            <!-- 리뷰 작성 폼 (숨김 상태) -->
+            <form id="review-form-{{ book['ISBN'] }}"
+                  action="{{ url_for('review', isbn=book['ISBN']) }}"
+                  method="POST"
+                  style="display: none; margin-bottom: 10px;">
+                <textarea name="comment"
+                          placeholder="리뷰를 작성하세요"
+                          rows="2"
+                          style="width: 100%; border-radius: 4px; padding: 5px;"
+                          required></textarea><br>
+                <input type="number"
+                       name="rating"
+                       min="1"
+                       max="5"
+                       step="0.1"
+                       placeholder="별점 (1-5)"
+                       style="width: 100%; border-radius: 4px; padding: 5px;"
+                       required><br>
+                <button type="submit"
+                        style="background-color: #4CAF50; color: white; padding: 8px 12px; border: none; cursor: pointer; margin-top: 5px; border-radius: 4px;">
+                    제출
+                </button>
+            </form>
+            {% endif %}
+
+            <!-- 대출 버튼 -->
+            {% if book['available_rent'] | int == 1 %}
+            <form action="{{ url_for('borrow', isbn=book['ISBN']) }}"
+                  method="POST"
+                  style="display: inline;">
+                <button type="submit"
+                        style="background-color: rgb(93, 93, 179); color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px;">
+                    대출
+                </button>
+            </form>
+            {% else %}
+            <button style="background-color: gray; color: white; border: none; padding: 10px 20px; cursor: not-allowed; border-radius: 4px;"
+                    disabled>
+                대출 불가
+            </button>
+            {% endif %}
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+
+
+<!-- 페이징 네비게이션 -->
+<div class="pagination"
+     style="text-align: center; margin-top: 20px;">
+    {% if page > 1 %}
+    <a href="{{ url_for('search', query=query, page=page-1) }}"
+       style="margin-right: 10px;">이전</a>
     {% endif %}
 
-    <!-- 홈으로 돌아가기 링크 -->
-    <a href="{{ url_for('home') }}">홈으로 돌아가기</a>
+    <span>페이지 {{ page }}{% if total_pages > 0 %} / {{ total_pages }}{% endif %}</span>
+
+    {% if total_pages > page %}
+    <a href="{{ url_for('search', query=query, page=page+1) }}"
+       style="margin-left: 10px;">다음</a>
+    {% endif %}
+</div>
+{% elif query %}
+<p>검색 결과가 없습니다.</p>
+{% endif %}
+
+<!-- 홈으로 돌아가기 링크 -->
+<div style="text-align: center; margin-top: 20px;">
+    <a href="{{ url_for('home') }}"
+       style="color: #2196F3;">홈으로 돌아가기</a>
+</div>
+
+<!-- JavaScript 함수 -->
+<script>
+    function toggleReviewForm(isbn) {
+        const form = document.getElementById(`review-form-${isbn}`);
+        if (form) {
+            form.style.display = form.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+    
+</script>
 {% endblock %}

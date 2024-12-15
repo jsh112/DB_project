@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ book['title'] }}{% endblock %}
+{% block content %}
+<div class="book-details-container" style="max-width: 800px; margin: 40px auto; padding: 20px; background-color: #f9f9f9; border-radius: 10px; box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);">
+    <h2 style="font-size: 2em; color: #333; margin-bottom: 10px;">
+        {{ book['title'] }} <span style="font-size: 0.7em; color: #777;"> {{ book['author'] }}</span>
+    </h2>
+    <p style="font-size: 1.1em; color: #555; margin-bottom: 5px;">
+        <strong>출판년도:</strong> {{ book['published_year'] }}
+    </p>
+    <p style="font-size: 1.1em; color: #555; margin-bottom: 20px;">
+        <strong>ISBN:</strong> {{ isbn }}
+    </p>
+
+    <h3 style="font-size: 1.5em; color: #444; margin-bottom: 15px; border-bottom: 2px solid #ccc; padding-bottom: 5px;">
+        책 리뷰
+    </h3>
+
+    {% if reviews %}
+        <ul style="list-style-type: none; padding: 0;">
+            {% for review in reviews %}
+                <li style="margin-bottom: 20px; padding: 15px; background-color: #fff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.05);">
+                    <strong style="font-size: 1.1em; color: #2196F3;">{{ review['anonymous_name'] }}</strong> 
+                    <span style="font-size: 1.1em; color: #FFD700;">★ {{ review['rating'] }}</span><br>
+                    <p style="margin: 10px 0; font-size: 1em; color: #333; line-height: 1.5;">
+                        {{ review['comment'] }}
+                    </p>
+                    <small style="color: #777;"> {{ review['create_date'] }} 작성 </small>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p style="font-size: 1.1em; color: #777;">아직 리뷰가 없습니다. 첫 리뷰를 달아주세요!</p>
+    {% endif %}
+
+    <!-- 홈으로 돌아가는 버튼 -->
+    <a href="{{ url_for('home') }}">
+        <button style="background-color: #2196F3; color: white; padding: 10px 15px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; margin-top: 20px;">
+            홈으로 돌아가기
+        </button>
+    </a>
+</div>
+{% endblock %}
